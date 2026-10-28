@@ -1,0 +1,15 @@
+{
+  "appId": "com.aistudio.neonrush.kdvypr",
+  "appName": "Neon Rush 3D",
+  "webDir": "app/src/main/assets/game",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

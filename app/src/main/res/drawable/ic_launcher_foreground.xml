@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Perspective speed grid lines -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M34,84 L54,58 L54,84 Z"
+        android:fillAlpha="0.4" />
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M74,84 L54,58 L54,84 Z"
+        android:fillAlpha="0.4" />
+    
+    <!-- Neon Speed Trails -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M24,52 L42,52 L36,56 L18,56 Z" />
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M28,60 L48,60 L42,64 L22,64 Z" />
+    <path
+        android:fillColor="#FFE600"
+        android:pathData="M32,44 L48,44 L44,48 L28,48 Z" />
+
+    <!-- Stylized 3D Neon Runner (Head, Torso, Arms, Legs in full sprint) -->
+    <!-- Head -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M66,28 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
+    <!-- Visor glow -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M66,27 L71,27 L70,29 L66,29 Z" />
+
+    <!-- Torso leaning forward -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M52,36 L66,33 L62,54 L50,50 Z" />
+    <!-- Chest neon core -->
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M54,38 L62,36 L60,46 L53,44 Z" />
+
+    <!-- Front Leg -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M62,53 L74,65 L69,67 L59,57 Z" />
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M74,65 L72,78 L67,78 L69,67 Z" />
+
+    <!-- Back Leg (extended back in run) -->
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M51,49 L42,59 L38,55 L48,46 Z" />
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M42,59 L48,70 L44,72 L38,55 Z" />
+
+    <!-- Arms -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,37 L48,44 L45,41 L55,35 Z" />
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M63,36 L72,43 L76,40 L65,34 Z" />
+</vector>

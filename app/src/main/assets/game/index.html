@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Neon Rush 3D</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+    <div id="speed-lines"></div>
+    <canvas id="warp-canvas"></canvas>
+
+    <!-- UI Overlay Layer -->
+    <div id="ui-layer">
+        <!-- In-Game HUD -->
+        <div id="hud-layer" style="display: none;">
+            <div class="hud-top">
+                <div class="hud-score-card">
+                    <div class="hud-score-label">SCORE</div>
+                    <div id="hud-score" class="hud-score-val">0</div>
+                    <div id="hud-distance" class="hud-distance-val">0 m</div>
+                </div>
+
+                <div class="hud-speed-card">
+                    <div class="hud-speed-top">
+                        <span class="hud-speed-icon">⚡</span>
+                        <span id="hud-speed-val" class="hud-speed-val">24</span>
+                        <span class="hud-speed-unit">KM/H</span>
+                    </div>
+                    <div id="hud-tier-badge" class="hud-tier-badge tier-cruise">CRUISE</div>
+                </div>
+
+                <div class="hud-coins-card">
+                    <span class="hud-coin-icon"></span>
+                    <span id="hud-coins" class="hud-coins-val">0</span>
+                </div>
+
+                <!-- System-Aware Battery Status Indicator -->
+                <div id="hud-battery" class="hud-battery-card" title="Device Battery Status">
+                    <div id="battery-shell" class="battery-shell">
+                        <div id="battery-fill" class="battery-fill"></div>
+                        <div id="battery-tip" class="battery-tip"></div>
+                    </div>
+                    <span id="battery-pct" class="battery-pct">--%</span>
+                    <span id="battery-bolt" class="battery-bolt" style="display: none;">⚡</span>
+                </div>
+
+                <button id="btn-pause" class="hud-pause-btn interactive" aria-label="Pause Game">⏸️</button>
+            </div>
+
+            <!-- Active Power-up Badges -->
+            <div id="hud-powerups"></div>
+
+            <!-- In-Game Speed Tier Surge Announcement Banner -->
+            <div id="hud-speed-surge" class="speed-surge-banner" style="display: none;">
+                <div class="speed-surge-icon">🚀</div>
+                <div class="speed-surge-content">
+                    <div class="speed-surge-title">SPEED SURGE!</div>
+                    <div id="hud-surge-tier-name" class="speed-surge-tier">HYPER DRIVE</div>
+                </div>
+            </div>
+
+            <!-- In-Game Daily Mission Notification Toast -->
+            <div id="hud-mission-toast" class="mission-toast">
+                <span class="mission-toast-icon">🎯</span>
+                <div class="mission-text-container">
+                    <div class="mission-toast-title">CHALLENGE COMPLETE!</div>
+                    <div id="hud-mission-toast-desc" class="mission-toast-desc">Slide under 10 obstacles (+250 🟡)</div>
+                </div>
+            </div>
+
+            <!-- Daily Streak Claim Toast -->
+            <div id="streak-claim-toast" class="streak-toast">
+                <span class="streak-toast-icon">🔥</span>
+                <div class="streak-toast-text">
+                    <div id="streak-toast-title" class="streak-toast-title">STREAK DAY 1 CLAIMED!</div>
+                    <div id="streak-toast-desc" class="streak-toast-desc">+50 Cyber Coins Added</div>
+                </div>
+            </div>
+
+            <!-- Bottom Touch Controls for Mobile Ergonomics -->
+            <div class="hud-bottom-controls">
+                <div class="controls-left-group">
+                    <button id="btn-left" class="touch-btn interactive" aria-label="Move Left">
+                        <span class="touch-btn-icon">◀</span>
+                        <span class="touch-btn-text">LEFT</span>
+                    </button>
+                    <button id="btn-right" class="touch-btn interactive" aria-label="Move Right">
+                        <span class="touch-btn-icon">▶</span>
+                        <span class="touch-btn-text">RIGHT</span>
+                    </button>
+                </div>
+                <div class="controls-right-group">
+                    <button id="btn-jump" class="touch-btn jump-btn interactive" aria-label="Jump">
+                        <span class="touch-btn-icon">▲</span>
+                        <span class="touch-btn-text">JUMP</span>
+                    </button>
+                    <button id="btn-slide" class="touch-btn slide-btn interactive" aria-label="Slide">
+                        <span class="touch-btn-icon">▼</span>
+                        <span class="touch-btn-text">SLIDE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Menu Screen -->
+        <div id="menu-screen" class="screen active interactive">
+            <div class="logo-container">
+                <h1 class="game-title">NEON RUSH</h1>
+                <div class="game-subtitle">3D CYBER ENDLESS RUNNER</div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-pill">
+                    <span class="stat-pill-label">BEST SCORE</span>
+                    <span id="menu-best-score" class="stat-pill-val">0</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-pill-label">TOTAL COINS</span>
+                    <span id="menu-total-coins" class="stat-pill-val">0</span>
+                </div>
+            </div>
+
+            <!-- Daily Streak Counter Widget on Main Menu -->
+            <div id="menu-streak-card" class="streak-widget interactive">
+                <div class="streak-widget-main" id="streak-card-body">
+                    <div class="streak-flame-box">
+                        <span class="streak-flame-emoji">🔥</span>
+                        <div id="streak-pulse-indicator" class="streak-pulse-ring"></div>
+                    </div>
+                    <div class="streak-details">
+                        <div class="streak-badge-row">
+                            <span class="streak-headline">DAILY STREAK</span>
+                            <span id="menu-streak-badge" class="streak-chip">0 DAYS</span>
+                        </div>
+                        <div id="menu-streak-subtext" class="streak-subtext">Day 1: +50 Coins Ready!</div>
+                    </div>
+                </div>
+                <div class="streak-action-box">
+                    <button id="btn-streak-quick-claim" class="streak-cta-btn" aria-label="Claim Daily Streak">
+                        <span id="streak-cta-text">CLAIM</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-actions">
+                <button id="btn-play" class="cyber-btn cyber-btn-primary">
+                    <span>⚡ PLAY RUNNER</span>
+                </button>
+                <button id="btn-open-streak" class="cyber-btn cyber-btn-outline" style="border-color: rgba(255, 140, 0, 0.55); position: relative;">
+                    <span>🔥 DAILY STREAK</span>
+                    <span id="streak-badge-notify" class="badge-notify" style="display: none; background: #ff7700;">!</span>
+                </button>
+                <button id="btn-shop" class="cyber-btn cyber-btn-yellow">
+                    <span>🛒 CYBER SHOP</span>
+                </button>
+                <button id="btn-missions" class="cyber-btn cyber-btn-cyan" style="position: relative;">
+                    <span>🎯 DAILY CHALLENGES</span>
+                    <span id="missions-badge" class="badge-notify" style="display: none;">1</span>
+                </button>
+                <button id="btn-leaderboard" class="cyber-btn cyber-btn-outline" style="border-color: rgba(255, 230, 0, 0.45);">
+                    <span>🏆 LEADERBOARD</span>
+                </button>
+                <button id="btn-tutorial" class="cyber-btn cyber-btn-outline">
+                    <span>📖 HOW TO PLAY</span>
+                </button>
+            </div>
+
+            <div class="settings-row">
+                <button id="toggle-sound" class="toggle-icon-btn" aria-label="Sound Toggle">🔊</button>
+                <button id="toggle-vibe" class="toggle-icon-btn" aria-label="Vibration Toggle">📳</button>
+            </div>
+        </div>
+
+        <!-- How To Play / Tutorial Modal -->
+        <div id="tutorial-screen" class="screen interactive">
+            <div class="cyber-card tutorial-modal">
+                <h2 class="tutorial-title">NEON INSTRUCTIONS</h2>
+                <div class="tutorial-grid">
+                    <div class="tutorial-item">
+                        <div class="tutorial-item-icon">◀ ▶</div>
+                        <div class="tutorial-item-title">CHANGE LANES</div>
+                        <div class="tutorial-item-desc">Swipe Left/Right or tap buttons to dodge columns.</div>
+                    </div>
+                    <div class="tutorial-item">
+                        <div class="tutorial-item-icon">▲</div>
+                        <div class="tutorial-item-title">JUMP</div>
+                        <div class="tutorial-item-desc">Swipe Up or tap Jump to clear low neon spikes.</div>
+                    </div>
+                    <div class="tutorial-item">
+                        <div class="tutorial-item-icon">▼</div>
+                        <div class="tutorial-item-title">SLIDE</div>
+                        <div class="tutorial-item-desc">Swipe Down or tap Slide to pass under high lasers.</div>
+                    </div>
+                    <div class="tutorial-item">
+                        <div class="tutorial-item-icon">🛡️ 🧲 ⚡</div>
+                        <div class="tutorial-item-title">POWER-UPS</div>
+                        <div class="tutorial-item-desc">Collect Shields, Coin Magnets, and 2X Multipliers!</div>
+                    </div>
+                </div>
+                <button id="btn-close-tutorial" class="cyber-btn cyber-btn-cyan" style="width: 100%; height: 50px;">
+                    GOT IT, LET'S RUN!
+                </button>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="screen interactive">
+            <div class="cyber-card pause-modal">
+                <h2 class="pause-title">GAME PAUSED</h2>
+                <div class="menu-actions" style="margin: 0 auto;">
+                    <button id="btn-resume" class="cyber-btn cyber-btn-cyan" style="height: 50px;">
+                        RESUME RUN
+                    </button>
+                    <button id="btn-restart" class="cyber-btn cyber-btn-primary" style="height: 50px;">
+                        RESTART
+                    </button>
+                    <button id="btn-pause-menu" class="cyber-btn cyber-btn-outline" style="height: 50px;">
+                        MAIN MENU
+                    </button>
+                </div>
+                <div class="settings-row" style="margin-top: 18px;">
+                    <button id="toggle-sound-pause" class="toggle-icon-btn" aria-label="Sound Toggle">🔊</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Missions / Challenges Modal Screen -->
+        <div id="missions-screen" class="screen interactive">
+            <div class="cyber-card missions-modal">
+                <div class="missions-header">
+                    <h2 class="missions-title">DYNAMIC DAILY CHALLENGES</h2>
+                    <div id="missions-countdown" class="missions-subtitle">NEW OBJECTIVES EVERY 24 HOURS</div>
+                </div>
+                <div id="missions-list" class="missions-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: auto; width: 100%;">
+                    <button id="btn-close-missions" class="cyber-btn cyber-btn-cyan" style="flex: 1; height: 48px;">
+                        BACK TO MENU
+                    </button>
+                    <button id="btn-reroll-test" class="cyber-btn cyber-btn-outline" style="width: 52px; height: 48px; padding: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Test Next 24h Cycle">
+                        🔄
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Streak Roadmap Modal Screen -->
+        <div id="streak-screen" class="screen interactive">
+            <div class="cyber-card streak-modal">
+                <div class="streak-modal-header">
+                    <div class="streak-fire-header">🔥</div>
+                    <h2 class="streak-modal-title">DAILY STREAK</h2>
+                    <div class="streak-modal-subtitle">LOG IN DAILY TO AMPLIFY YOUR REWARDS</div>
+                    <div class="streak-current-banner">
+                        <span class="streak-banner-label">CURRENT STREAK:</span>
+                        <span id="streak-modal-count" class="streak-banner-value">0 DAYS</span>
+                    </div>
+                </div>
+
+                <div id="streak-days-container" class="streak-days-container">
+                    <!-- Populated dynamically via JS: 7 Days Roadmap -->
+                </div>
+
+                <div class="streak-modal-footer">
+                    <button id="btn-streak-claim-modal" class="cyber-btn cyber-btn-yellow" style="width: 100%; height: 50px;">
+                        <span id="streak-modal-claim-text">⚡ CLAIM TODAY'S BONUS</span>
+                    </button>
+                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+                        <button id="btn-close-streak" class="cyber-btn cyber-btn-cyan" style="flex: 1; height: 46px;">
+                            BACK TO MENU
+                        </button>
+                        <button id="btn-streak-test-advance" class="cyber-btn cyber-btn-outline" style="width: 52px; height: 46px; padding: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;" title="Test Next Day Streak">
+                            🔄
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cyber Shop Screen Modal -->
+        <div id="shop-screen" class="screen interactive">
+            <div class="cyber-card shop-modal">
+                <div class="shop-header">
+                    <h2 class="shop-title">CYBER SHOP</h2>
+                    <div class="shop-balance-pill">
+                        <span class="hud-coin-icon"></span>
+                        <span id="shop-total-coins" class="shop-balance-val">0</span>
+                    </div>
+                </div>
+
+                <!-- Tabs: Skins & Trails -->
+                <div class="shop-tabs">
+                    <button id="tab-btn-skins" class="shop-tab-btn active">👕 RUNNER SKINS</button>
+                    <button id="tab-btn-trails" class="shop-tab-btn">✨ TRAIL FX</button>
+                </div>
+
+                <!-- Shop Items Container -->
+                <div id="shop-items-container" class="shop-items-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <div id="shop-message" class="shop-alert-msg" style="display: none;"></div>
+
+                <button id="btn-close-shop" class="cyber-btn cyber-btn-cyan" style="width: 100%; height: 48px; margin-top: 10px;">
+                    BACK TO MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- High Score Rank Entry Modal -->
+        <div id="rank-entry-screen" class="screen interactive">
+            <div class="cyber-card rank-entry-modal">
+                <div class="rank-badge-pill">🏆 TOP 5 RUNNER!</div>
+                <h2 class="rank-entry-title">HALL OF FAME</h2>
+                <div class="rank-score-display">
+                    <span id="rank-entry-score" class="rank-entry-score-val">0</span>
+                    <span class="rank-entry-score-label">POINTS</span>
+                </div>
+                <div class="rank-input-container">
+                    <label for="player-name-input" class="rank-input-label">ENTER CALL SIGN:</label>
+                    <input type="text" id="player-name-input" class="cyber-input" maxlength="10" placeholder="CYBER_ACE" autocomplete="off" autocorrect="off" autocapitalize="characters">
+                </div>
+                <button id="btn-submit-score" class="cyber-btn cyber-btn-primary" style="width: 100%; height: 50px;">
+                    SUBMIT TO LEADERBOARD
+                </button>
+                <button id="btn-skip-score" class="cyber-btn cyber-btn-outline" style="width: 100%; height: 42px; margin-top: 8px;">
+                    SKIP
+                </button>
+            </div>
+        </div>
+
+        <!-- Local All-Time Leaderboard Screen Modal -->
+        <div id="leaderboard-screen" class="screen interactive">
+            <div class="cyber-card leaderboard-modal">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">TOP RUNNERS</h2>
+                    <div class="leaderboard-subtitle">LOCAL ALL-TIME HALL OF FAME</div>
+                </div>
+
+                <div id="leaderboard-rows" class="leaderboard-list">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <button id="btn-close-leaderboard" class="cyber-btn cyber-btn-cyan" style="width: 100%; height: 48px; margin-top: 14px;">
+                    BACK TO MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen interactive">
+            <div class="cyber-card gameover-modal">
+                <h2 class="gameover-title">CRASH DETECTED</h2>
+                <div id="new-record-badge" class="new-record-badge" style="display: none;">🏆 NEW RECORD!</div>
+
+                <div class="gameover-stats-grid">
+                    <div class="gameover-stat-box highlight">
+                        <div class="gameover-stat-label">FINAL SCORE</div>
+                        <div id="gameover-final-score" class="gameover-stat-val">0</div>
+                    </div>
+                    <div class="gameover-stat-box">
+                        <div class="gameover-stat-label">DISTANCE</div>
+                        <div id="gameover-distance" class="gameover-stat-val">0m</div>
+                    </div>
+                    <div class="gameover-stat-box">
+                        <div class="gameover-stat-label">COINS COLLECTED</div>
+                        <div id="gameover-coins" class="gameover-stat-val">+0</div>
+                    </div>
+                    <div class="gameover-stat-box">
+                        <div class="gameover-stat-label">TOTAL BANK</div>
+                        <div id="gameover-total-coins" class="gameover-stat-val">0</div>
+                    </div>
+                </div>
+
+                <!-- Daily Missions Progress Summary on Game Over -->
+                <div class="gameover-missions-container">
+                    <div class="gameover-missions-title">
+                        <span>🎯 DAILY CHALLENGES</span>
+                        <span id="gameover-missions-status"></span>
+                    </div>
+                    <div id="gameover-missions-list" class="gameover-missions-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="menu-actions" style="margin: 0 auto; gap: 10px;">
+                    <button id="btn-gameover-retry" class="cyber-btn cyber-btn-primary" style="height: 52px;">
+                        🔄 RETRY RUN
+                    </button>
+                    <button id="btn-gameover-leaderboard" class="cyber-btn cyber-btn-yellow" style="height: 48px;">
+                        🏆 LEADERBOARD
+                    </button>
+                    <button id="btn-gameover-menu" class="cyber-btn cyber-btn-outline" style="height: 44px;">
+                        MAIN MENU
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/three.min.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

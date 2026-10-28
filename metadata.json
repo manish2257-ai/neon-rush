@@ -1,0 +1,6 @@
+{
+  "name": "Neon Rush 3D",
+  "description": "High-speed futuristic 3D cyberpunk endless runner featuring real-time Three.js graphics, dynamic obstacles, lane switching, jumping, sliding, and neon synth aesthetics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
