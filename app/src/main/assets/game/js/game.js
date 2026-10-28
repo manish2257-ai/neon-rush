@@ -31,6 +31,11 @@
             dirIntensity: 1.20,
             backColor: 0xff007f,
             backIntensity: 0.60,
+            skyColor: 0x00f0ff,
+            skyRotSpeedY: 0.035,
+            skyRotSpeedX: 0.008,
+            skyRotSpeedZ: 0.012,
+            skyScrollSpeed: 0.045,
             engineBoost: 1.0
         },
         {
@@ -48,6 +53,11 @@
             dirIntensity: 1.35,
             backColor: 0x00f0ff,
             backIntensity: 0.75,
+            skyColor: 0x00ff88,
+            skyRotSpeedY: 0.08,
+            skyRotSpeedX: 0.018,
+            skyRotSpeedZ: 0.026,
+            skyScrollSpeed: 0.09,
             engineBoost: 1.35
         },
         {
@@ -65,6 +75,11 @@
             dirIntensity: 1.55,
             backColor: 0xff6600,
             backIntensity: 0.90,
+            skyColor: 0xffe600,
+            skyRotSpeedY: 0.15,
+            skyRotSpeedX: 0.035,
+            skyRotSpeedZ: 0.06,
+            skyScrollSpeed: 0.16,
             engineBoost: 1.75
         },
         {
@@ -82,6 +97,11 @@
             dirIntensity: 1.70,
             backColor: 0xff2200,
             backIntensity: 1.05,
+            skyColor: 0xff007f,
+            skyRotSpeedY: 0.26,
+            skyRotSpeedX: 0.065,
+            skyRotSpeedZ: 0.12,
+            skyScrollSpeed: 0.28,
             engineBoost: 2.25
         },
         {
@@ -99,6 +119,11 @@
             dirIntensity: 1.95,
             backColor: 0x00f0ff,
             backIntensity: 1.25,
+            skyColor: 0xdf44ff,
+            skyRotSpeedY: 0.44,
+            skyRotSpeedX: 0.11,
+            skyRotSpeedZ: 0.22,
+            skyScrollSpeed: 0.48,
             engineBoost: 3.0
         }
     ];
@@ -139,6 +164,7 @@
     let playerGroup, playerMesh, shieldMesh, engineLight;
     let ambientLight, dirLight, backLight;
     let skylineBuildingMat, skylineWindowMat;
+    let skyboxMesh, skyboxMat, skyGridTexture;
     let trackSegments = [];
     let obstacles = [];
     let collectibleCoins = [];
@@ -151,6 +177,11 @@
     let targetAmbientColor = null;
     let targetDirColor = null;
     let targetBackColor = null;
+    let targetSkyColor = null;
+    let currentSkyRotY = 0.035;
+    let currentSkyRotX = 0.008;
+    let currentSkyRotZ = 0.012;
+    let currentSkyScroll = 0.045;
     let targetFogDensity = 0.012;
     let targetAmbientIntensity = 0.85;
     let targetDirIntensity = 1.20;
@@ -1342,6 +1373,7 @@
         targetAmbientColor = new THREE.Color(0x351d5a);
         targetDirColor = new THREE.Color(0x00f0ff);
         targetBackColor = new THREE.Color(0xff007f);
+        targetSkyColor = new THREE.Color(SPEED_TIERS[0].skyColor);
 
         // Camera (Third person perspective behind and above player)
         camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 350);
@@ -1370,6 +1402,7 @@
         createPlayer();
         createTrack();
         createCitySkyline();
+        createSkybox();
         setupEvents();
 
         loadStorage();
@@ -1577,6 +1610,183 @@
             scene.add(beacon);
             buildings.push(beacon);
         }
+    }
+
+    // ==========================================
+    // PROCEDURAL DYNAMIC NEON SKYBOX
+    // ==========================================
+    function generateProceduralSkyGridTexture() {
+        const size = 1024;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        // Deep Cyberspace Background Gradient
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, size);
+        bgGrad.addColorStop(0, '#030108');
+        bgGrad.addColorStop(0.3, '#0b041a');
+        bgGrad.addColorStop(0.5, '#16082e');
+        bgGrad.addColorStop(0.7, '#0b041a');
+        bgGrad.addColorStop(1, '#030108');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, size, size);
+
+        // Distant Cyber Data Stars & Celestial Nexus Points
+        let seed = 42;
+        function rnd() {
+            seed = (seed * 9301 + 49297) % 233280;
+            return seed / 233280;
+        }
+
+        const numStars = 180;
+        for (let i = 0; i < numStars; i++) {
+            const sx = rnd() * size;
+            const sy = rnd() * size;
+            const sRadius = 0.5 + rnd() * 1.5;
+            const sAlpha = 0.25 + rnd() * 0.7;
+            const isCyan = rnd() > 0.4;
+
+            ctx.beginPath();
+            ctx.arc(sx, sy, sRadius, 0, Math.PI * 2);
+            ctx.fillStyle = isCyan ? `rgba(0, 240, 255, ${sAlpha})` : `rgba(255, 68, 204, ${sAlpha})`;
+            ctx.fill();
+
+            if (sRadius > 1.2) {
+                ctx.beginPath();
+                ctx.arc(sx, sy, sRadius * 2.8, 0, Math.PI * 2);
+                ctx.fillStyle = isCyan ? `rgba(0, 240, 255, ${sAlpha * 0.25})` : `rgba(255, 68, 204, ${sAlpha * 0.25})`;
+                ctx.fill();
+            }
+        }
+
+        // Minor Neon Grid (Dense 32x32 subdivisions, fine 1px cyber lines)
+        const minorStep = size / 32;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.16)';
+        ctx.beginPath();
+        for (let i = 0; i <= size; i += minorStep) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, size);
+            ctx.moveTo(0, i);
+            ctx.lineTo(size, i);
+        }
+        ctx.stroke();
+
+        // Major Neon Grid (8x8 divisions with high-voltage glowing halo)
+        const majorStep = size / 8;
+
+        // Outer glow pass for major grid lines
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.28)';
+        ctx.beginPath();
+        for (let i = 0; i <= size; i += majorStep) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, size);
+            ctx.moveTo(0, i);
+            ctx.lineTo(size, i);
+        }
+        ctx.stroke();
+
+        // Inner luminous core for major grid lines
+        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.beginPath();
+        for (let i = 0; i <= size; i += majorStep) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, size);
+            ctx.moveTo(0, i);
+            ctx.lineTo(size, i);
+        }
+        ctx.stroke();
+
+        // High-Voltage Intersection Nodes (Glowing cyber nexus points)
+        for (let x = 0; x <= size; x += majorStep) {
+            for (let y = 0; y <= size; y += majorStep) {
+                // Radial glow
+                const glowGrad = ctx.createRadialGradient(x, y, 1, x, y, 14);
+                glowGrad.addColorStop(0, 'rgba(0, 240, 255, 0.9)');
+                glowGrad.addColorStop(0.4, 'rgba(255, 0, 128, 0.4)');
+                glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, 14, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Bright diamond node core
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(x, y - 4);
+                ctx.lineTo(x + 4, y);
+                ctx.lineTo(x, y + 4);
+                ctx.lineTo(x - 4, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(6, 4);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    function createSkybox() {
+        skyGridTexture = generateProceduralSkyGridTexture();
+
+        // Celestial sphere enclosing the entire cyberpunk world
+        const skyGeo = new THREE.SphereGeometry(265, 36, 26);
+        skyboxMat = new THREE.MeshBasicMaterial({
+            map: skyGridTexture,
+            side: THREE.BackSide,
+            transparent: true,
+            opacity: 0.92,
+            fog: false, // Prevents FogExp2 from washing out crisp neon lines
+            depthWrite: false
+        });
+
+        skyboxMesh = new THREE.Mesh(skyGeo, skyboxMat);
+        skyboxMesh.position.copy(camera.position);
+        scene.add(skyboxMesh);
+    }
+
+    function updateSkybox(dt) {
+        if (!skyboxMesh || !skyboxMat || !skyGridTexture) return;
+
+        // Position skybox seamlessly centered on camera so it forms an infinite cosmic dome
+        if (camera) {
+            skyboxMesh.position.copy(camera.position);
+        }
+
+        const currentTier = SPEED_TIERS[currentSpeedTierIndex] || SPEED_TIERS[0];
+
+        // Smoothly interpolate multi-axis rotation speeds and UV scroll rate toward active tier targets
+        const lerpRate = Math.min(1.0, 3.0 * dt);
+        currentSkyRotY += (currentTier.skyRotSpeedY - currentSkyRotY) * lerpRate;
+        currentSkyRotX += (currentTier.skyRotSpeedX - currentSkyRotX) * lerpRate;
+        currentSkyRotZ += (currentTier.skyRotSpeedZ - currentSkyRotZ) * lerpRate;
+        currentSkyScroll += (currentTier.skyScrollSpeed - currentSkyScroll) * lerpRate;
+
+        // Multi-axis rotation (yaw drift, pitch oscillation, and roll)
+        skyboxMesh.rotation.y += currentSkyRotY * dt;
+        skyboxMesh.rotation.x += currentSkyRotX * dt;
+        skyboxMesh.rotation.z += currentSkyRotZ * dt;
+
+        // UV offset scrolling: forward stream driven by current player speed relative to base speed
+        const speedRatio = (currentState === STATE.PLAYING) ? Math.max(1.0, currentSpeed / BASE_SPEED) : 0.6;
+        skyGridTexture.offset.y = (skyGridTexture.offset.y + currentSkyScroll * speedRatio * dt) % 1.0;
+        skyGridTexture.offset.x = (skyGridTexture.offset.x + currentSkyRotY * 0.12 * dt) % 1.0;
+
+        // Dynamic color tinting to match the current speed tier atmosphere
+        if (targetSkyColor) {
+            targetSkyColor.setHex(currentTier.skyColor);
+            skyboxMat.color.lerp(targetSkyColor, Math.min(1.0, 3.5 * dt));
+        }
+
+        // Atmosphere flash boosts skybox luminescence during tier transitions
+        skyboxMat.opacity = Math.min(1.0, 0.92 + (atmosphereFlashIntensity * 0.08));
     }
 
     // ==========================================
@@ -2980,7 +3190,19 @@
             backLight.intensity = targetBackIntensity;
             if (skylineBuildingMat) skylineBuildingMat.color.copy(targetAmbientColor);
             if (skylineWindowMat) skylineWindowMat.color.copy(targetDirColor);
+            if (targetSkyColor) targetSkyColor.setHex(tier.skyColor);
+            if (skyboxMat && targetSkyColor) {
+                skyboxMat.color.copy(targetSkyColor);
+                skyboxMat.opacity = 0.92;
+            }
+            if (skyboxMesh) {
+                skyboxMesh.rotation.set(0, 0, 0);
+            }
         }
+        currentSkyRotY = tier.skyRotSpeedY;
+        currentSkyRotX = tier.skyRotSpeedX;
+        currentSkyRotZ = tier.skyRotSpeedZ;
+        currentSkyScroll = tier.skyScrollSpeed;
     }
 
     // Main Game Loop (Delta-Time Based)
@@ -2995,6 +3217,7 @@
         if (currentState === STATE.PLAYING) {
             updatePhysics(dt);
             updateAtmosphere(dt);
+            updateSkybox(dt);
             updateTrack(dt);
             updateObstaclesAndItems(dt);
             updateParticles(dt);
@@ -3004,10 +3227,15 @@
         } else if (currentState === STATE.MENU) {
             // Idle background scrolling in menu
             updateAtmosphere(dt * 0.5);
+            updateSkybox(dt * 0.4);
             updateTrack(dt * 0.3);
             playerGroup.position.x = 0;
             playerGroup.position.y = Math.sin(now * 0.003) * 0.15;
             engineLight.intensity = 1.5 + Math.sin(now * 0.008) * 0.5;
+        } else {
+            // Paused or Game Over - subtle slow rotation
+            updateAtmosphere(dt * 0.2);
+            updateSkybox(dt * 0.2);
         }
 
         renderer.render(scene, camera);
